@@ -1,9 +1,7 @@
-
+import { Bentobox } from "./components/Bentobox";
 function App() {
   return (
-    <div>
-      <h1>Hello, World!</h1>
-    </div>
+    <Bentobox/>
   );
 }
 
