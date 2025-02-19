@@ -4,7 +4,7 @@ import { RoughNotation } from "react-rough-notation";
 
 export const About = ({ className }) => {
   const [lines, setLines] = useState(["", "", ""]);
-  const fullTextLines = ["Hello,", "I'm", "Dev Panchal"];
+  const fullTextLines = ["Hello,", "I'm", "Dev Panchal."];
   const [currentLine, setCurrentLine] = useState(0);
   const [currentChar, setCurrentChar] = useState(0);
   const [typingComplete, setTypingComplete] = useState(false);
@@ -15,7 +15,7 @@ export const About = ({ className }) => {
   });
 
   const description =
-    "I'm a software engineer based in Toronto. My passion is to create emotional experiences at the intersection of art, design, and AI.";
+    "I'm a software engineer based in Toronto. My passion is to create emotional experiences at the intersection of art, design, and AI. I'm a software engineer based in Toronto.";
   const socials = {
     GitHub: "https://github.com/DevPanchal02",
     Linkedin: "https://www.linkedin.com/in/dev-panchal-5a9a651aa/",
@@ -65,7 +65,7 @@ export const About = ({ className }) => {
             typingComplete ? "-translate-y-8" : "translate-y-0"
           }`}
         >
-          <div className="text-white text-5xl font-mono">
+          <div className="text-white text-4xl sm:text-5xl md:text-6xl font-mono">
             {lines.map((line, index) => (
               <div key={index} className="relative whitespace-pre text-left">
                 {line}
@@ -79,7 +79,7 @@ export const About = ({ className }) => {
           </div>
 
           <div
-            className={`mt-8 max-w-xl text-gray-300 text-lg font-light leading-relaxed transition-all duration-1000 ease-in-out ${
+            className={`mt-8 max-w-2xl text-gray-300 text-lg sm:text-l md:text-xl font-light leading-relaxed transition-all duration-1000 ease-in-out ${
               typingComplete
                 ? "opacity-100 transform translate-y-0"
                 : "opacity-0 transform translate-y-4"
@@ -89,7 +89,7 @@ export const About = ({ className }) => {
           </div>
 
           <div
-            className={`mt-8 flex space-x-6 transition-all duration-1000 ease-in-out ${
+            className={`mt-5 flex space-x-4 sm:space-x-6 transition-all duration-1000 ease-in-out ${
               typingComplete
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-4"
