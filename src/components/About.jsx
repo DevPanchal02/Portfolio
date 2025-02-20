@@ -1,13 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaGithub, FaLinkedin, FaEnvelope } from "react-icons/fa";
 import { RoughNotation } from "react-rough-notation";
 
-export const About = ({ className }) => {
+export const About = ({ className, startLanguageCycle = false }) => {
+  // Preserve original animation flow
   const [lines, setLines] = useState(["", "", ""]);
   const fullTextLines = ["Hello,", "I'm", "Dev Panchal."];
   const [currentLine, setCurrentLine] = useState(0);
   const [currentChar, setCurrentChar] = useState(0);
   const [typingComplete, setTypingComplete] = useState(false);
+
+  // Language cycling states - only used after initial animation completes
+  const cycleAnimationRef = useRef(null);
+  const [isInitialAnimationDone, setIsInitialAnimationDone] = useState(false);
+  const [isCycling, setIsCycling] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
+  const [languageIndex, setLanguageIndex] = useState(0); // Start with English (index 0)
+  const [showCursor, setShowCursor] = useState(true);
+  const [cursorPosition, setCursorPosition] = useState(0);
+
+  // All language versions - English will be skipped in first cycle since it's the initial animation
+  const languageGreetings = [
+    ["Hello,", "I'm", "Dev Panchal."], // English
+    ["Bonjour,", "Je suis", "Dev Panchal."], // French
+    ["你好，", "我是", "Dev Panchal."], // Mandarin
+    ["Hola,", "Soy", "Dev Panchal."], // Spanish
+    ["नमस्ते,", "मैं", "Dev Panchal हूँ।"], // Hindi
+    ["مرحبا،", "أنا", "Dev Panchal."], // Arabic
+  ];
+
+  // For social links hover states
   const [hoverStates, setHoverStates] = useState({
     GitHub: false,
     Linkedin: false,
@@ -15,14 +37,19 @@ export const About = ({ className }) => {
   });
 
   const description =
-    "I'm a software engineer based in Toronto. My passion is to create emotional experiences at the intersection of art, design, and AI. I'm a software engineer based in Toronto.";
+    "I'm a software engineer based in Toronto. My passion is to create emotional experiences at the intersection of art, design, and AI.";
+
   const socials = {
     GitHub: "https://github.com/DevPanchal02",
     Linkedin: "https://www.linkedin.com/in/dev-panchal-5a9a651aa/",
     Email: "mailto:devpanchal0120@gmail.com",
   };
 
+  // STEP 1: Initial typing animation
   useEffect(() => {
+    // Skip if we're already cycling through languages
+    if (isCycling) return;
+
     if (currentLine < fullTextLines.length) {
       if (currentChar < fullTextLines[currentLine].length) {
         const timer = setTimeout(() => {
@@ -35,19 +62,144 @@ export const About = ({ className }) => {
             return newLines;
           });
           setCurrentChar((prev) => prev + 1);
-        }, 100);
+          setCursorPosition(currentLine);
+        }, 100); // Slightly slower typing
         return () => clearTimeout(timer);
       } else {
         setCurrentLine((prev) => prev + 1);
         setCurrentChar(0);
+        setCursorPosition(currentLine + 1);
       }
     } else {
       const timer = setTimeout(() => {
         setTypingComplete(true);
+        setIsInitialAnimationDone(true);
+        // Keep cursor at the end of the last line
+        setCursorPosition(fullTextLines.length - 1);
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [currentLine, currentChar]);
+  }, [currentLine, currentChar, isCycling]);
+
+  // STEP 2: Begin language cycling sooner after initial animation is done
+  useEffect(() => {
+    if (isInitialAnimationDone && startLanguageCycle && !isCycling) {
+      // Start language cycle sooner (1.5s instead of 3s)
+      const startCycleTimer = setTimeout(() => {
+        setIsCycling(true);
+        setIsErasing(true);
+        // Start with erasing the currently displayed text
+        setCurrentLine(fullTextLines.length - 1);
+        setCurrentChar(fullTextLines[fullTextLines.length - 1].length);
+        setCursorPosition(fullTextLines.length - 1);
+      }, 1500); // Reduced wait time before cycling
+
+      return () => clearTimeout(startCycleTimer);
+    }
+  }, [isInitialAnimationDone, startLanguageCycle]);
+
+  // STEP 3: Language cycling animation
+  useEffect(() => {
+    if (!isCycling) return;
+
+    // Clean up any existing animation timer
+    if (cycleAnimationRef.current) {
+      clearTimeout(cycleAnimationRef.current);
+    }
+
+    // Get current language text (skip to next language if we're about to type)
+    const nextLanguageIndex = isErasing ? languageIndex : (languageIndex + 1) % languageGreetings.length;
+    const currentLanguage = languageGreetings[nextLanguageIndex];
+
+    if (isErasing) {
+      // ERASING PHASE
+      if (currentLine >= 0) {
+        if (currentChar > 0) {
+          // Erase one character
+          cycleAnimationRef.current = setTimeout(() => {
+            setLines((prevLines) => {
+              const newLines = [...prevLines];
+              newLines[currentLine] = (isErasing ?
+                languageGreetings[languageIndex][currentLine] :
+                currentLanguage[currentLine]).slice(0, currentChar - 1);
+              return newLines;
+            });
+            setCurrentChar((prev) => prev - 1);
+            // Keep cursor at the end of current text
+            setCursorPosition(currentLine);
+          }, 50);
+        } else {
+          // Move to previous line
+          if (currentLine > 0) {
+            setCurrentLine((prev) => prev - 1);
+            const prevLineText = isErasing ?
+              languageGreetings[languageIndex][currentLine - 1] :
+              currentLanguage[currentLine - 1];
+            setCurrentChar(prevLineText.length);
+            setCursorPosition(currentLine - 1);
+          } else {
+            // All erased, prepare to type the next language
+            setLanguageIndex((prev) => (prev + 1) % languageGreetings.length);
+            setIsErasing(false);
+            setCurrentLine(0);
+            setCurrentChar(0);
+            setCursorPosition(0);
+          }
+        }
+      }
+    } else {
+      // TYPING PHASE
+      if (currentLine < currentLanguage.length) {
+        if (currentChar < currentLanguage[currentLine].length) {
+          // Type next character
+          cycleAnimationRef.current = setTimeout(() => {
+            setLines((prevLines) => {
+              const newLines = [...prevLines];
+              newLines[currentLine] = currentLanguage[currentLine].slice(0, currentChar + 1);
+              return newLines;
+            });
+            setCurrentChar((prev) => prev + 1);
+            setCursorPosition(currentLine);
+          }, 80);
+        } else {
+          // Move to next line
+          setCurrentLine((prev) => {
+            const nextLine = prev + 1;
+            // Update cursor position immediately with valid line index
+            setCursorPosition(nextLine < currentLanguage.length ? nextLine : currentLanguage.length - 1);
+            return nextLine;
+          });
+          setCurrentChar(0);
+        }
+      } else {
+        // Typing complete - wait before starting to erase
+        cycleAnimationRef.current = setTimeout(() => {
+          setIsErasing(true);
+          setCurrentLine(currentLanguage.length - 1);
+          setCurrentChar(currentLanguage[currentLanguage.length - 1].length);
+          setCursorPosition(currentLanguage.length - 1);
+        }, 2000); // Pause with text visible
+      }
+    }
+  }, [currentLine, currentChar, isErasing, languageIndex, isCycling]);
+
+  // Cursor blink effect - independent of typing state
+  useEffect(() => {
+    const blinkInterval = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 500); // Standard cursor blink rate
+
+    return () => clearInterval(blinkInterval);
+  }, []);
+
+  // Clean up all animation timers on unmount
+  useEffect(() => {
+    return () => {
+      if (cycleAnimationRef.current) {
+        clearTimeout(cycleAnimationRef.current);
+      }
+    };
+  }, []);
 
   const handleMouseEnter = (name) => {
     setHoverStates((prev) => ({ ...prev, [name]: true }));
@@ -65,13 +217,13 @@ export const About = ({ className }) => {
             typingComplete ? "-translate-y-8" : "translate-y-0"
           }`}
         >
-          <div className="text-white text-4xl sm:text-5xl md:text-6xl font-mono">
+          {/* Using fixed height containers to prevent layout shift when re-typing*/}
+          <div className="text-white text-4xl sm:text-5xl md:text-6xl font-mono h-[220px] flex flex-col justify-start">
             {lines.map((line, index) => (
-              <div key={index} className="relative whitespace-pre text-left">
-                {line}
-                {currentLine === index && (
-                  <span className="absolute inline-block h-full animate-pulse">
-                    |
+              <div key={index} className="relative whitespace-pre text-left h-[80px] flex items-center">
+                {line || ""}
+                {cursorPosition === index && showCursor && (
+                  <span className="inline-block h-[70%] w-[3px] bg-white animate-pulse">
                   </span>
                 )}
               </div>
@@ -79,20 +231,20 @@ export const About = ({ className }) => {
           </div>
 
           <div
-            className={`mt-8 max-w-2xl text-gray-300 text-lg sm:text-l md:text-xl font-light leading-relaxed transition-all duration-1000 ease-in-out ${
+            className={`mt-8 max-w-2xl text-gray-300 text-lg sm:text-l md:text-xl font-light leading-relaxed transition-opacity duration-1000 ease-in-out ${
               typingComplete
-                ? "opacity-100 transform translate-y-0"
-                : "opacity-0 transform translate-y-4"
+                ? "opacity-100"
+                : "opacity-0"
             }`}
           >
             {description}
           </div>
 
           <div
-            className={`mt-5 flex space-x-4 sm:space-x-6 transition-all duration-1000 ease-in-out ${
+            className={`mt-5 flex space-x-4 sm:space-x-6 transition-opacity duration-1000 ease-in-out ${
               typingComplete
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+                ? "opacity-100"
+                : "opacity-0"
             }`}
           >
             {Object.entries(socials).map(([name, url], index) => {

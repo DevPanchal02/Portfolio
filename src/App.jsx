@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Bentobox } from "./components/Bentobox";
 import { About } from "./components/About";
 import './styles/LoadingScreen.css';
+import overlay from "./Assets/overlay.mp4"
 
 const App = () => {
   // Track multiple animation states instead of just one
@@ -9,23 +10,34 @@ const App = () => {
   const [aboutSectionReady, setAboutSectionReady] = useState(false);
   const [bentoVisible, setBentoVisible] = useState(false);
   
+  // New state to control when to start cycling languages (only after all initial animations)
+  const [startLanguageCycle, setStartLanguageCycle] = useState(false);
+
   // Create a staged animation sequence with proper timing
   useEffect(() => {
     // Stage 1: Mark loading as complete
     const loadingTimer = setTimeout(() => {
       setLoadingComplete(true);
     }, 1000);
-    
+
     // Stage 2: Prepare the About section for resizing
     const aboutReadyTimer = setTimeout(() => {
       setAboutSectionReady(true);
     }, 2000);
-    
+
     // Stage 3: Finally bring in the Bento box
     const bentoTimer = setTimeout(() => {
       setBentoVisible(true);
+      
+      // Stage 4: After everything is positioned and the initial animations completed,
+      // signal that it's time to start cycling languages
+      const cycleStartTimer = setTimeout(() => {
+        setStartLanguageCycle(true);
+      }, 4000); // Give extra time after the Bento appears
+      
+      return () => clearTimeout(cycleStartTimer);
     }, 3000);
-    
+
     // Clean up all timers
     return () => {
       clearTimeout(loadingTimer);
@@ -33,9 +45,21 @@ const App = () => {
       clearTimeout(bentoTimer);
     };
   }, []);
-  
+
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#090a0c] overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#111010] overflow-hidden ">
+      {/* Video Overlay for visual effects */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-45 mix-blend-screen pointer-events-none z-0"
+      >
+        <source src={overlay} type="video/mp4" />
+      </video>
+
+      {/* About Section */}
       <section
         className={`
           h-screen relative will-change-[width] 
@@ -46,7 +70,10 @@ const App = () => {
           transform: aboutSectionReady ? "none" : "translateX(0)",
         }}
       >
-        <About className="w-full h-full" />
+        <About 
+          className="w-full h-full" 
+          startLanguageCycle={startLanguageCycle} // Signal when to start language cycling
+        />
       </section>
 
       {/* Bentobox Section: Pre-render but keep invisible until needed */}
