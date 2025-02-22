@@ -21,12 +21,13 @@ export const About = ({ className, startLanguageCycle = false }) => {
 
   // All language versions - English will be skipped in first cycle since it's the initial animation
   const languageGreetings = [
-    ["Hello,", "I'm", "Dev Panchal."], // English
-    ["Bonjour,", "Je suis", "Dev Panchal."], // French
+    ["Hello,", "I'm", "Dev Panchal."], // English - index 0
+    ["Bonjour,", "je suis", "Dev Panchal."], // French
+    ["Hola,", "soy", "Dev Panchal."], // Spanish
     ["你好，", "我是", "Dev Panchal."], // Mandarin
-    ["Hola,", "Soy", "Dev Panchal."], // Spanish
-    ["नमस्ते,", "मैं", "Dev Panchal हूँ।"], // Hindi
-    ["مرحبا،", "أنا", "Dev Panchal."], // Arabic
+    ["नमस्ते,", "मैं", "Dev Panchal हूं."], // Hindi
+    ["Привет, ", "я", "Dev Panchal."], //Russian
+    ["こんにちは、", "私は", "Dev Panchal."] //Japanese
   ];
 
   // For social links hover states
@@ -37,7 +38,7 @@ export const About = ({ className, startLanguageCycle = false }) => {
   });
 
   const description =
-    "I'm a software engineer based in Toronto. My passion is to create emotional experiences at the intersection of art, design, and AI.";
+    "I'm a Toronto based software engineer who transforms complex challenges into elegant, efficient solutions. I build reliable, high-performance software designed for longevity and a seamless user experience.";
 
   const socials = {
     GitHub: "https://github.com/DevPanchal02",
@@ -92,11 +93,13 @@ export const About = ({ className, startLanguageCycle = false }) => {
         setCurrentLine(fullTextLines.length - 1);
         setCurrentChar(fullTextLines[fullTextLines.length - 1].length);
         setCursorPosition(fullTextLines.length - 1);
+        // Initialize language index to 1 to skip English in the cycle
+        setLanguageIndex(1);
       }, 1500); // Reduced wait time before cycling
 
       return () => clearTimeout(startCycleTimer);
     }
-  }, [isInitialAnimationDone, startLanguageCycle]);
+  }, [isInitialAnimationDone, startLanguageCycle, isCycling]);
 
   // STEP 3: Language cycling animation
   useEffect(() => {
@@ -107,9 +110,8 @@ export const About = ({ className, startLanguageCycle = false }) => {
       clearTimeout(cycleAnimationRef.current);
     }
 
-    // Get current language text (skip to next language if we're about to type)
-    const nextLanguageIndex = isErasing ? languageIndex : (languageIndex + 1) % languageGreetings.length;
-    const currentLanguage = languageGreetings[nextLanguageIndex];
+    // Get current language text based on current language index
+    const currentLanguage = languageGreetings[languageIndex];
 
     if (isErasing) {
       // ERASING PHASE
@@ -119,9 +121,7 @@ export const About = ({ className, startLanguageCycle = false }) => {
           cycleAnimationRef.current = setTimeout(() => {
             setLines((prevLines) => {
               const newLines = [...prevLines];
-              newLines[currentLine] = (isErasing ?
-                languageGreetings[languageIndex][currentLine] :
-                currentLanguage[currentLine]).slice(0, currentChar - 1);
+              newLines[currentLine] = lines[currentLine]?.slice(0, currentChar - 1) || "";
               return newLines;
             });
             setCurrentChar((prev) => prev - 1);
@@ -129,17 +129,19 @@ export const About = ({ className, startLanguageCycle = false }) => {
             setCursorPosition(currentLine);
           }, 50);
         } else {
-          // Move to previous line
+          // Move to previous line - Clear the current line immediately for clean erase
+          setLines((prevLines) => {
+            const newLines = [...prevLines];
+            newLines[currentLine] = ""; // Clean erase line by line
+            return newLines;
+          });
           if (currentLine > 0) {
             setCurrentLine((prev) => prev - 1);
-            const prevLineText = isErasing ?
-              languageGreetings[languageIndex][currentLine - 1] :
-              currentLanguage[currentLine - 1];
+            const prevLineText = lines[currentLine - 1] || "";
             setCurrentChar(prevLineText.length);
             setCursorPosition(currentLine - 1);
           } else {
             // All erased, prepare to type the next language
-            setLanguageIndex((prev) => (prev + 1) % languageGreetings.length);
             setIsErasing(false);
             setCurrentLine(0);
             setCurrentChar(0);
@@ -165,8 +167,8 @@ export const About = ({ className, startLanguageCycle = false }) => {
           // Move to next line
           setCurrentLine((prev) => {
             const nextLine = prev + 1;
-            // Update cursor position immediately with valid line index
-            setCursorPosition(nextLine < currentLanguage.length ? nextLine : currentLanguage.length - 1);
+            // Update cursor position immediately with valid line index, clamping to the last line
+            setCursorPosition(Math.min(nextLine, currentLanguage.length - 1));
             return nextLine;
           });
           setCurrentChar(0);
@@ -174,6 +176,12 @@ export const About = ({ className, startLanguageCycle = false }) => {
       } else {
         // Typing complete - wait before starting to erase
         cycleAnimationRef.current = setTimeout(() => {
+          // Increment language index, skip index 0 (English)
+          setLanguageIndex((prev) => {
+            const nextIndex = prev + 1;
+            // If next index would be 0 (English), skip to 1
+            return nextIndex >= languageGreetings.length ? 1 : nextIndex;
+          });
           setIsErasing(true);
           setCurrentLine(currentLanguage.length - 1);
           setCurrentChar(currentLanguage[currentLanguage.length - 1].length);
@@ -181,7 +189,7 @@ export const About = ({ className, startLanguageCycle = false }) => {
         }, 2000); // Pause with text visible
       }
     }
-  }, [currentLine, currentChar, isErasing, languageIndex, isCycling]);
+  }, [currentLine, currentChar, isErasing, languageIndex, isCycling, lines]);
 
   // Cursor blink effect - independent of typing state
   useEffect(() => {
@@ -213,12 +221,11 @@ export const About = ({ className, startLanguageCycle = false }) => {
     <div className={`h-full ${className}`}>
       <div className="flex items-center justify-center h-full w-full">
         <div
-          className={`inline-flex flex-col transition-all duration-1000 ease-in-out ${
-            typingComplete ? "-translate-y-8" : "translate-y-0"
-          }`}
+          className={`inline-flex flex-col transition-all duration-1000 ease-in-out ${typingComplete ? "translate-y-0" : "translate-y-8"
+            }`}
         >
           {/* Using fixed height containers to prevent layout shift when re-typing*/}
-          <div className="text-white text-4xl sm:text-5xl md:text-6xl font-mono h-[220px] flex flex-col justify-start">
+          <div className="text-white text-4xl sm:text-5xl md:text-6xl font-mono h-[220px] flex flex-col justify-start overflow-hidden translate-">
             {lines.map((line, index) => (
               <div key={index} className="relative whitespace-pre text-left h-[80px] flex items-center">
                 {line || ""}
@@ -231,29 +238,27 @@ export const About = ({ className, startLanguageCycle = false }) => {
           </div>
 
           <div
-            className={`mt-8 max-w-2xl text-gray-300 text-lg sm:text-l md:text-xl font-light leading-relaxed transition-opacity duration-1000 ease-in-out ${
-              typingComplete
+            className={`mt-8 max-w-2xl text-gray-300 text-lg sm:text-l md:text-xl font-light leading-relaxed transition-opacity duration-1000 ease-in-out ${typingComplete
                 ? "opacity-100"
                 : "opacity-0"
-            }`}
+              }`}
           >
             {description}
           </div>
 
           <div
-            className={`mt-5 flex space-x-4 sm:space-x-6 transition-opacity duration-1000 ease-in-out ${
-              typingComplete
+            className={`mt-5 flex space-x-4 sm:space-x-6 transition-opacity duration-1000 ease-in-out ${typingComplete
                 ? "opacity-100"
                 : "opacity-0"
-            }`}
+              }`}
           >
             {Object.entries(socials).map(([name, url], index) => {
               const Icon =
                 name === "GitHub"
                   ? FaGithub
                   : name === "Linkedin"
-                  ? FaLinkedin
-                  : FaEnvelope;
+                    ? FaLinkedin
+                    : FaEnvelope;
 
               return (
                 <a
