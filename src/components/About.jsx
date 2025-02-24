@@ -21,7 +21,7 @@ export const About = ({ className, startLanguageCycle = false }) => {
 
   // All language versions - English will be skipped in first cycle since it's the initial animation
   const languageGreetings = [
-    ["Hello,", "I'm", "Dev Panchal."], // English - index 0
+    ["Hello,", "I'm", "Dev Panchal."], // English
     ["Bonjour,", "je suis", "Dev Panchal."], // French
     ["Hola,", "soy", "Dev Panchal."], // Spanish
     ["你好，", "我是", "Dev Panchal."], // Mandarin
