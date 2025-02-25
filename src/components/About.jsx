@@ -38,7 +38,7 @@ export const About = ({ className, startLanguageCycle = false }) => {
   });
 
   const description =
-    "I'm a Toronto based software engineer who transforms complex challenges into elegant, efficient solutions. I build reliable, high-performance software designed for longevity and a seamless user experience.";
+    "I'm a Toronto-based software engineer who transforms complex challenges into elegant, efficient solutions. I build reliable, high-performance software designed for longevity and a seamless user experience.";
 
   const socials = {
     GitHub: "https://github.com/DevPanchal02",

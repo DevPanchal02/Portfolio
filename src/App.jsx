@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Bentobox } from "./components/Bentobox";
 import { About } from "./components/About";
-import './styles/LoadingScreen.css';
 import overlay from "./Assets/overlay.mp4"
 
 const App = () => {

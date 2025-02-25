@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+/* Cursor effect for the bento container */
+.bentobox-container.bentobox-cursor-none {
+  cursor: none;
+}
+
+/* Text styles - hidden by default, appear on hover */
+.bentobox-cell .bento-cell-text {
+  @apply absolute inset-0 flex justify-center items-center text-white text-xl font-bold pointer-events-none transition-opacity duration-200 ease-out opacity-0; /* Tailwind text styles + opacity-0 */
+  transform: translate(0, 0);
+}
+
+.bentobox-cell.bento-hovered-text .bento-cell-text {
+    @apply opacity-100; /* Make text visible on hover */
+}
+
+.bentobox-cell {
+    cursor: none; /* Hide cursor when over cell */
+}
+
+.bentobox-container:not(.bentobox-cursor-none) .bentobox-cell:hover {
+    cursor: pointer; /* Restore pointer cursor for cells when not in grid */
+}
+
+
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
